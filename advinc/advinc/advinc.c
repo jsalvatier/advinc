@@ -3,19 +3,7 @@
 #include "C_arraytest.h"
 #include <math.h>
 
-PyMODINIT_FUNC
-init_advinc(void)
-{
-   (void)Py_InitModule("advinc", mymethods);
-   import_array();
-}
 
-static PyMethodDef mymethods[] = {
-    { "index_inc",index_inc,
-      METH_VARARGS,
-      "increments a numpy array on a set of indexes"},
-    {NULL, NULL, 0, NULL} /* Sentinel */
-}
 
 
 static int
@@ -182,3 +170,18 @@ example_wrapper(PyObject *dummy, PyObject *args)
     Py_XDECREF(inc);
     return NULL;
 }
+
+static PyMethodDef mymethods[] = {
+    { "index_inc",index_inc,
+      METH_VARARGS,
+      "increments a numpy array on a set of indexes"},
+    {NULL, NULL, 0, NULL} /* Sentinel */
+}
+
+PyMODINIT_FUNC
+init_advinc(void)
+{
+   (void)Py_InitModule("advinc", mymethods);
+   import_array();
+}
+
