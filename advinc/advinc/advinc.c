@@ -1,18 +1,13 @@
 #include <Python.h>
-#include "arrayobject.h"
-#include "C_arraytest.h"
-#include <math.h>
-
-
-
+#include <numpy/arrayobject.h>
+#include "numpy/noprefix.h"
 
 static int
-PyArray_SetMap(PyArrayMapIterObject *mit, PyObject *op)
+map_inc(PyArrayMapIterObject *mit, PyObject *op)
 {
     PyObject *arr = NULL;
     PyArrayIterObject *it;
     int index;
-    int swap;
     PyArray_Descr *descr;
 
     /* Unbound Map Iterator */
@@ -21,7 +16,7 @@ PyArray_SetMap(PyArrayMapIterObject *mit, PyObject *op)
     }
     descr = mit->ait->ao->descr;
     Py_INCREF(descr);
-    arr = PyArray_FromAny(op, descr, 0, 0, FORCECAST, NULL);
+    arr = PyArray_FromAny(op, descr, 0, 0, NPY_FORCECAST, NULL);
     if (arr == NULL) {
         return -1;
     }
@@ -49,9 +44,8 @@ PyArray_SetMap(PyArrayMapIterObject *mit, PyObject *op)
 
     while(index--) {
         memmove(mit->dataptr, it->dataptr, PyArray_ITEMSIZE(arr));
-        if (swap) {
-        	(double)mit->dataptr = (double)mit->dataptr + (double)it->dataptr; 
-        }
+        	*(double*)(mit->dataptr) = *(double*)(mit->dataptr) + *(double*)(it->dataptr); 
+        	
         PyArray_MapIterNext(mit);
         PyArray_ITER_NEXT(it);
     }
@@ -61,64 +55,9 @@ PyArray_SetMap(PyArrayMapIterObject *mit, PyObject *op)
 }
 
 
-PyObject* index_inc(PyObject *dummy, PyObject *args)
-{
-	PyArrayObject *a;
-	PyOjbect* index;
-	PyObject *inc;
-	
-	if (!PyArg_ParseTuple(args, "O&OO", 
-						&a, PyArray_Converter,
-	                    &index,
-	                    &inc)) return NULL;
-                      
-    PyArrayMapIterObject *mit;
-    intp vals[MAX_DIMS];
-
-    if (inc == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "cannot delete array elements");
-        return NULL;
-    }
-    if (!PyArray_ISWRITEABLE(a)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "array is not writeable");
-        return NULL;
-    }
-    
-    if (a->nd == 0) {
-        PyErr_SetString(PyExc_IndexError, "0-d arrays can't be indexed.");
-        return NULL;
-    }
-
-    PyErr_Clear();
-
-
-    mit = (PyArrayMapIterObject *) PyArray_MapIterNew(index, 0, 1);
-    if (mit == NULL) {
-        return NULL;
-    }
-
-    PyArray_MapIterBind(mit, a);
-    if (PyArray_SetMap(mit, inc) != 0)
-    {
-    	PyErr_SetString(PyExc_RuntimeError, "error during mapping");
-    	return NULL;
-    }
-    Py_DECREF(mit);
-    
-    PyDECREF(a);
-    PyDECREF(index);
-    PyDECREF(inc);
-    
-    Py_INCREF(Py_None);
-    return Py_None;
-    
-}
-
 
 static PyObject *
-example_wrapper(PyObject *dummy, PyObject *args)
+index_inc(PyObject *dummy, PyObject *args)
 {
     PyObject *arg_a, *index=NULL, *inc=NULL;
 	PyArrayObject *a;
@@ -126,7 +65,7 @@ example_wrapper(PyObject *dummy, PyObject *args)
     if (!PyArg_ParseTuple(args, "OOO", &arg_a, &index,
         &inc)) return NULL;
 
-    a = PyArray_FROM_OTF(arg1, NPY_DOUBLE, NPY_INOUT_ARRAY);
+    a = PyArray_FROM_OTF(arg_a, NPY_DOUBLE, NPY_INOUT_ARRAY);
     if (a == NULL) return NULL;
     
     if (a->nd == 0) {
@@ -142,11 +81,11 @@ example_wrapper(PyObject *dummy, PyObject *args)
 
 	
 	//body
-	mit = (PyArrayMapIterObject *) PyArray_MapIterNew(index, 0, 1);
+	PyArrayMapIterObject * mit = (PyArrayMapIterObject *) PyArray_MapIterNew(index, 0, 1);
     if (mit == NULL) goto fail;
 
     PyArray_MapIterBind(mit, a);
-    if (PyArray_SetMap(mit, inc) != 0)
+    if (map_inc(mit, inc) != 0)
     {
     	PyErr_SetString(PyExc_RuntimeError, "error during mapping");
     	goto fail;
@@ -172,16 +111,12 @@ example_wrapper(PyObject *dummy, PyObject *args)
 }
 
 static PyMethodDef mymethods[] = {
-    { "index_inc",index_inc,
-      METH_VARARGS,
-      "increments a numpy array on a set of indexes"},
+    { "index_inc",(PyCFunction) index_inc, METH_VARARGS, "increments a numpy array on a set of indexes"},
     {NULL, NULL, 0, NULL} /* Sentinel */
-}
+};
 
-PyMODINIT_FUNC
-init_advinc(void)
+PyMODINIT_FUNC initadvinc(void)
 {
    (void)Py_InitModule("advinc", mymethods);
    import_array();
 }
-
