@@ -1,15 +1,17 @@
 #include <Python.h>
-
+#include "arrayobject.h"
+#include "C_arraytest.h"
+#include <math.h>
 
 PyMODINIT_FUNC
-initadvinc(void)
+init_advinc(void)
 {
    (void)Py_InitModule("advinc", mymethods);
    import_array();
 }
 
 static PyMethodDef mymethods[] = {
-    { "advinc",array_ass_sub,
+    { "index_inc",index_inc,
       METH_VARARGS,
       "increments a numpy array on a set of indexes"},
     {NULL, NULL, 0, NULL} /* Sentinel */
@@ -71,7 +73,7 @@ PyArray_SetMap(PyArrayMapIterObject *mit, PyObject *op)
 }
 
 
-PyObject* index_increment(PyObject *dummy, PyObject *args)
+PyObject* index_inc(PyObject *dummy, PyObject *args)
 {
 	PyArrayObject *a;
 	PyOjbect* index;
