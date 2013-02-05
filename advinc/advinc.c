@@ -50,9 +50,9 @@ map_increment(PyArrayMapIterObject *mit, PyObject *op, inplace_map_binop add_inp
             }
         }
     }
-
-    if ((it = (PyArrayIterObject *)\
-            PyArray_BroadcastToShape(arr, mit->dimensions, mit->nd)) == NULL) {
+    it = (PyArrayIterObjectPy*)
+            Array_BroadcastToShape(arr, mit->dimensions, mit->nd);
+    if (it  == NULL) {
         Py_DECREF(arr);	
         
         return -1;
